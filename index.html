@@ -1,1 +1,223 @@
-hi
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Arial', sans-serif;
+            background-color: #282c34;
+            color: #e0f7e8;
+            animation: fadeIn 1s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .container {
+            text-align: center;
+        }
+        
+        h1 {
+            margin-bottom: 20px;
+            animation: slideIn 0.5s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #3a3f47;
+            border-radius: 10px;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            position: relative;
+        }
+        
+        .cell:hover {
+            background-color: #4b4f57;
+            transform: scale(1.1);
+        }
+        
+        .cell.fade-in {
+            animation: fadeInCell 0.3s ease forwards;
+        }
+        
+        @keyframes fadeInCell {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        .winning-cell {
+            background-color: #ffcc00;
+            animation: pulse 0.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .restart-button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 5px;
+            background-color: #3a3f47;
+            color: #e0f7e8;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+        
+        .restart-button:hover {
+            background-color: #4b4f57;
+            transform: scale(1.1);
+        }
+        
+        .status {
+            margin-top: 10px;
+            font-size: 1.2rem;
+            animation: fadeIn 0.5s ease;
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tic Tac Toe</h1>
+        <div id="board" class="board">
+            <div class="cell" data-cell-index="0"></div>
+            <div class="cell" data-cell-index="1"></div>
+            <div class="cell" data-cell-index="2"></div>
+            <div class="cell" data-cell-index="3"></div>
+            <div class="cell" data-cell-index="4"></div>
+            <div class="cell" data-cell-index="5"></div>
+            <div class="cell" data-cell-index="6"></div>
+            <div class="cell" data-cell-index="7"></div>
+            <div class="cell" data-cell-index="8"></div>
+        </div>
+        <button id="restartButton" class="restart-button">Restart</button>
+        <div id="status" class="status"></div>
+
+        <!-- Audio elements for sound effects -->
+        <audio id="moveSound" src="move.mp3"></audio>
+        <audio id="winSound" src="win.mp3"></audio>
+        <audio id="tieSound" src="tie.mp3"></audio>
+        <audio id="turnSound" src="turn.mp3"></audio>
+    </div>
+    <script>
+        const cells = document.querySelectorAll('.cell');
+        const statusText = document.getElementById('status');
+        const restartButton = document.getElementById('restartButton');
+        const moveSound = document.getElementById('moveSound');
+        const winSound = document.getElementById('winSound');
+        const tieSound = document.getElementById('tieSound');
+        const turnSound = document.getElementById('turnSound');
+        let board = Array(9).fill(null);
+        let currentPlayer = 'X';
+        let gameActive = true;
+        
+        function handleCellClick(event) {
+            const clickedCell = event.target;
+            const clickedCellIndex = parseInt(clickedCell.getAttribute('data-cell-index'));
+        
+            if (board[clickedCellIndex] !== null || !gameActive) {
+                return;
+            }
+        
+            board[clickedCellIndex] = currentPlayer;
+            clickedCell.textContent = currentPlayer;
+            clickedCell.classList.add('fade-in');
+            moveSound.play(); // Play move sound
+        
+            if (checkWinner()) {
+                highlightWinner();
+                winSound.play(); // Play win sound
+                statusText.textContent = `${currentPlayer} wins! 🎉`;
+                gameActive = false;
+            } else if (board.every(cell => cell !== null)) {
+                tieSound.play(); // Play tie sound
+                statusText.textContent = 'It\'s a tie! 🤝';
+                gameActive = false;
+            } else {
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                turnSound.play(); // Play turn sound
+            }
+        }
+        
+        function highlightWinner() {
+            const winningConditions = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+                [0, 4, 8], [2, 4, 6] // diagonals
+            ];
+        
+            winningConditions.forEach(condition => {
+                const [a, b, c] = condition;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    cells[a].classList.add('winning-cell');
+                    cells[b].classList.add('winning-cell');
+                    cells[c].classList.add('winning-cell');
+                }
+            });
+        }
+        
+        function checkWinner() {
+            const winningConditions = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
+                [0, 4, 8], [2, 4, 6] // diagonals
+            ];
+        
+            return winningConditions.some(condition => {
+                const [a, b, c] = condition;
+                return board[a] === board[b] && board[a] === board[c] && board[a] !== null;
+            });
+        }
+        
+        function restartGame() {
+            board.fill(null);
+            currentPlayer = 'X';
+            gameActive = true;
+            statusText.textContent = '';
+            cells.forEach(cell => {
+                cell.textContent = '';
+                cell.classList.remove('fade-in', 'winning-cell');
+            });
+        }
+        
+        cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+        restartButton.addEventListener('click', restartGame);
+        
+    </script>
+</body>
+</html>
